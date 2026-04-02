@@ -1,0 +1,15 @@
+name: "finops-gym-v1"
+version: "1.0.0"
+description: "A Cloud FinOps environment for cost-optimization agents."
+# This MUST point to the engine.py file inside the env folder
+entry_point: "env.engine:FinOpsEnv"
+tasks:
+  - id: "zombie_cleanup"
+    name: "Level 1: Cleanup Idle Resources"
+    difficulty: "easy"
+  - id: "right_sizing"
+    name: "Level 2: Resource Optimization"
+    difficulty: "medium"
+  - id: "disaster_recovery"
+    name: "Level 3: Budget Emergency"
+    difficulty: "hard"
