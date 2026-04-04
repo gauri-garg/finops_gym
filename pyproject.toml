@@ -1,0 +1,18 @@
+[project]
+name = "finops-gym-v1"
+version = "1.0.0"
+description = "A Cloud FinOps environment for cost-optimization agents."
+readme = "README.md"
+requires-python = ">=3.10"
+dependencies = [
+    "fastapi",
+    "uvicorn",
+    "pydantic",
+    "openai",
+    "requests",
+    "python-dotenv"
+]
+
+[build-system]
+requires = ["setuptools", "wheel"]
+build-backend = "setuptools.build_meta"

@@ -7,14 +7,10 @@ from openai import OpenAI
 from env.engine import FinOpsEnv
 from env.models import Action
 
-# --- Mandatory Env Vars for Meta Grader ---
 API_BASE_URL = os.getenv("API_BASE_URL", "https://router.huggingface.co/v1")
 MODEL_NAME = os.getenv("MODEL_NAME", "Qwen/Qwen2.5-72B-Instruct")
-
-# 1. CHANGE: Pointing to your custom Secret name 'FinOps'
 HF_TOKEN = os.getenv("FinOps") 
 
-# Initialize client globally
 client = OpenAI(base_url=API_BASE_URL, api_key=HF_TOKEN)
 
 def log_start(task: str, env: str, model: str) -> None:
@@ -29,7 +25,6 @@ def log_end(success: bool, steps: int, score: float, rewards: List[float]) -> No
     print(f"[END] success={str(success).lower()} steps={steps} score={score:.3f} rewards={rewards_str}", flush=True)
 
 async def main():
-    # 2. FIX: Ensure we use the token we grabbed at the top
     if not HF_TOKEN:
         print("[DEBUG] Error: Secret 'FinOps' not found in environment!")
         return
