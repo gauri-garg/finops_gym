@@ -1,18 +1,14 @@
-FROM python:3.10-slim
+FROM ghcr.io/meta-pytorch/openenv-base:latest
 
-ENV PYTHONDONTWRITEBYTECODE=1 \
-    PYTHONUNBUFFERED=1 \
-    HOME=/home/user \
-    PATH=/home/user/.local/bin:$PATH
-
-RUN useradd -m -u 1000 user
-USER user
 WORKDIR /app
 
-COPY --chown=user requirements.txt .
-RUN pip install --no-cache-dir --user -r requirements.txt
+COPY . .
 
-COPY --chown=user . .
+RUN uv pip install -e .
+
+ENV PYTHONPATH="/app:$PYTHONPATH"
+ENV ENABLE_WEB_INTERFACE=true
+
 EXPOSE 7860
 
-CMD ["python3", "-m", "uvicorn", "server.app:app", "--host", "0.0.0.0", "--port", "7860"]
+CMD ["serve", "--port", "7860"]

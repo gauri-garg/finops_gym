@@ -1,2 +1,12 @@
-/.venv
-/env
+# Build artifacts
+*.egg-info/
+build/
+dist/
+
+# Environment
+.venv/
+__pycache__/
+.env
+
+# MacOS specific
+.DS_Store

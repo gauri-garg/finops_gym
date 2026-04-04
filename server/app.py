@@ -1,37 +1,57 @@
-from fastapi import FastAPI, HTTPException
-from fastapi.encoders import jsonable_encoder 
-from env.engine import FinOpsEnv
-from env.models import Action
-import os
+import uvicorn
+import argparse
+from fastapi import FastAPI
+from fastapi.middleware.cors import CORSMiddleware
 
-app = FastAPI(title="FinOps-Gym-Validator")
-env = FinOpsEnv()
+# Meta-Standard: Use absolute imports for the package structure
+try:
+    from env.engine import FinOpsEngine 
+    from server.models import FinOpsAction, FinOpsObservation
+except ImportError:
+    # Fallback for local testing if needed
+    from engine import FinOpsEngine
+    from models import FinOpsAction, FinOpsObservation
 
-@app.get("/")
+app = FastAPI(title="FinOps-Gym-V1")
+
+# Standard Hackathon Middleware
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
+
+# Initialize the logic
+engine = FinOpsEngine()
+
+@app.get("/health")
 def health_check():
-    return {"status": "online", "env": "finops_gym", "version": "2026.04.02"}
+    return {"status": "healthy", "environment": "finops-gym-v1"}
 
 @app.post("/reset")
-async def reset(data: dict = None):
-    task_id = (data.get("task_id") if data else "zombie_cleanup") or "zombie_cleanup"
-    obs = env.reset(task_id=task_id)
-    return jsonable_encoder(obs.model_dump())
+def reset(agent_id: str):
+    return engine.reset(agent_id)
 
 @app.post("/step")
-async def step(action_data: dict):
-    try:
-        action = Action(**action_data)
-        obs, reward, done, info = env.step(action)
-        return jsonable_encoder({
-            "observation": obs.model_dump(),
-            "reward": float(reward),
-            "done": bool(done),
-            "info": info
-        })
-    except Exception as e:
-        print(f"[DEBUG] Step Error: {e}") 
-        raise HTTPException(status_code=400, detail=str(e))
+def step(agent_id: str, action: FinOpsAction):
+    # This matches the mentor's Pydantic model structure
+    return engine.step(agent_id, action)
 
-@app.get("/state")
-async def state():
-    return jsonable_encoder(env._get_obs("Current state request").model_dump())
+# --- MENTOR'S MAIN ENTRY POINT ---
+def main():
+    """
+    This is the function the Meta Validator calls via 'serve'.
+    It allows the bot to override the port.
+    """
+    parser = argparse.ArgumentParser(description="FinOps Gym Server")
+    parser.add_argument("--host", type=str, default="0.0.0.0")
+    parser.add_argument("--port", type=int, default=8000)
+    
+    args = parser.parse_args()
+    
+    # Start the Uvicorn server using the app object
+    uvicorn.run(app, host=args.host, port=args.port)
+
+if __name__ == "__main__":
+    main()
