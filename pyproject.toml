@@ -12,7 +12,7 @@ dependencies = [
 ]
 
 [project.scripts]
-serve = "app:app"
+serve = "server.app:app"
 
 [build-system]
 requires = ["setuptools", "wheel"]

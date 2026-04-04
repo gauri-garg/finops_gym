@@ -21,7 +21,8 @@ finops_gym/
 ├── test/
 │   └── test_api.py     # Integration tests for environment safety
 ├── Dockerfile          # Containerization for Hugging Face Spaces
-├── main.py             # FastAPI Server Entry point
+├── server/             # FastAPI Server Entry point
+│   └── app.py
 ├── inference.py        # AI Agent (Qwen-2.5-72B) implementation
 ├── openenv.yaml        # OpenEnv Environment configuration
 └── requirements.txt    # Project dependencies
