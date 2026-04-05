@@ -11,7 +11,7 @@ API_BASE_URL = os.getenv("API_BASE_URL", "https://router.huggingface.co/v1")
 MODEL_NAME = os.getenv("MODEL_NAME", "Qwen/Qwen2.5-72B-Instruct")
 HF_TOKEN = os.getenv("FinOps") 
 
-client = OpenAI(base_url=API_BASE_URL, api_key=HF_TOKEN)
+
 
 def log_start(task: str, env: str, model: str) -> None:
     print(f"[START] task={task} env={env} model={model}", flush=True)
@@ -39,9 +39,11 @@ async def main():
     try:
         obs = env.reset(task_id=task_id)
         
+        client = OpenAI(base_url=API_BASE_URL, api_key=HF_TOKEN)
+        
         for step in range(1, 11): 
             # Simple conversion for the prompt
-            obs_json = json.dumps(obs.dict())
+            obs_json = obs.model_dump_json()
             prompt = f"Cloud Inventory: {obs_json}. Task: {task_id}. Choose action."
             
             completion = client.chat.completions.create(
