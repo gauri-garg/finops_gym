@@ -5,12 +5,17 @@ from fastapi.middleware.cors import CORSMiddleware
 
 # Meta-Standard: Use absolute imports for the package structure
 try:
-    from env.engine import FinOpsEngine 
-    from server.models import FinOpsAction, FinOpsObservation
+    from env.engine import FinOpsEnv 
+    from env.models import Action, Observation
+    from pydantic import BaseModel
 except ImportError:
     # Fallback for local testing if needed
-    from engine import FinOpsEngine
-    from models import FinOpsAction, FinOpsObservation
+    from engine import FinOpsEnv
+    from models import Action, Observation
+    from pydantic import BaseModel
+
+class ResetRequest(BaseModel):
+    task_id: str = "zombie_cleanup"
 
 app = FastAPI(title="FinOps-Gym-V1")
 
@@ -23,20 +28,26 @@ app.add_middleware(
 )
 
 # Initialize the logic
-engine = FinOpsEngine()
+engine = FinOpsEnv()
 
 @app.get("/health")
 def health_check():
     return {"status": "healthy", "environment": "finops-gym-v1"}
 
 @app.post("/reset")
-def reset(agent_id: str):
-    return engine.reset(agent_id)
+def reset(request: ResetRequest):
+    return engine.reset(request.task_id)
 
 @app.post("/step")
-def step(agent_id: str, action: FinOpsAction):
+def step(action: Action):
     # This matches the mentor's Pydantic model structure
-    return engine.step(agent_id, action)
+    obs, reward, done, info = engine.step(action)
+    return {
+        "observation": obs,
+        "reward": reward,
+        "done": done,
+        "info": info
+    }
 
 # --- MENTOR'S MAIN ENTRY POINT ---
 def main():
