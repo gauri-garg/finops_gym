@@ -16,10 +16,10 @@ class FinOpsEnv:
         self.task_id = task_id
         
         self.resources = [
-            CloudResource(id="srv-prod-01", resource_type="compute", size="m5.xlarge", cpu_util=0.02, hourly_cost=0.192, is_essential=True),
-            CloudResource(id="db-main", resource_type="database", size="db.m5.large", cpu_util=0.45, hourly_cost=0.170, is_essential=True),
-            CloudResource(id="srv-idle-static", resource_type="compute", size="t3.medium", cpu_util=0.0, hourly_cost=0.0416, is_essential=False),
-            CloudResource(id="storage-temp-logs", resource_type="storage", size="500GB", cpu_util=0.01, hourly_cost=0.05, is_essential=False)
+            CloudResource(id="srv-prod-01", resource_type="compute", size="m5.xlarge", cpu_util=0.02, hourly_cost=0.192, is_essential=True, region="us-east-1", uptime_days=365, service_level_agreement="99.99%"),
+            CloudResource(id="db-main", resource_type="database", size="db.m5.large", cpu_util=0.45, hourly_cost=0.170, is_essential=True, region="us-west-2", uptime_days=400, service_level_agreement="99.99%"),
+            CloudResource(id="srv-idle-static", resource_type="compute", size="t3.medium", cpu_util=0.0, hourly_cost=0.0416, is_essential=False, region="eu-central-1", uptime_days=10, service_level_agreement="99.0%"),
+            CloudResource(id="storage-temp-logs", resource_type="storage", size="500GB", cpu_util=0.01, hourly_cost=0.05, is_essential=False, region="us-east-1", uptime_days=5, service_level_agreement="99.0%")
         ]
         return self._get_obs(f"Environment reset. Task: {task_id}")
 
@@ -28,22 +28,23 @@ class FinOpsEnv:
         reward = 0.0
         msg = f"Step {self.current_step}: Executed {action.command} on {action.resource_id}"
         
-        # Find the target resource
         target_idx = next((i for i, r in enumerate(self.resources) if r.id == action.resource_id), None)
         
         if target_idx is not None:
-            # Create a local reference so we don't pop the wrong one
             resource = self.resources[target_idx]
             
             if action.command == "terminate":
+                cost_saved = 0.0
+                perf_penalty = 0.0
                 if resource.is_essential:
-                    reward -= 5.0  # Scaled penalty
+                    perf_penalty = 50.0  # Massive penalty for killing prod
                     msg = f"CRITICAL FAILURE: Terminated essential resource {resource.id}!"
                 else:
-                    # Reward proportional to the money saved
-                    reward += (resource.hourly_cost * 10) 
+                    cost_saved = resource.hourly_cost * 10
                     msg = f"SUCCESS: Terminated {resource.id}. Saved ${resource.hourly_cost}/hr."
                     self.resources.pop(target_idx)
+                
+                reward = (cost_saved * 0.7) - (perf_penalty * 0.3)
             
             elif action.command == "resize":
                 if action.new_size and action.new_size != "none":
@@ -52,15 +53,21 @@ class FinOpsEnv:
                     resource.cpu_util *= 2.0
                     resource.size = action.new_size
                     
+                    cost_saved = (old_cost - resource.hourly_cost) * 10
+                    perf_penalty = 0.0
+                    
                     if resource.cpu_util > 0.95:
-                        reward -= 1.0 
-                        msg = f"WARNING: {resource.id} performance bottleneck!"
+                        perf_penalty = 20.0 if resource.service_level_agreement == "99.99%" else 10.0
+                        msg = f"WARNING: {resource.id} performance bottleneck (SLA: {resource.service_level_agreement})!"
                     else:
-                        reward += (old_cost - resource.hourly_cost) * 5
                         msg = f"SUCCESS: {resource.id} right-sized."
+                        
+                    # Evaluated Formula: Reward = (Cost Saved * 0.7) - (Performance Penalty * 0.3)
+                    reward = (cost_saved * 0.7) - (perf_penalty * 0.3)
         
         elif action.command == "nop":
-            reward -= 0.1 
+            # Penalty for doing nothing using formula equivalents
+            reward = (0.0 * 0.7) - (0.5 * 0.3) 
             msg = "No operation performed."
 
         done = self.current_step >= self.max_steps or len(self.resources) <= 2 # Finish when zombies are gone

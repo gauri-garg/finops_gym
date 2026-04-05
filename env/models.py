@@ -8,6 +8,9 @@ class CloudResource(BaseModel):
     cpu_util: float = Field(..., ge=0.0, le=1.0)
     hourly_cost: float
     is_essential: bool = False
+    region: str = "us-east-1"
+    uptime_days: int = 0
+    service_level_agreement: Literal["99.99%", "99.9%", "99.0%", "none"] = "none"
 
 class Action(BaseModel):
     command: Literal["terminate", "resize", "nop"]
