@@ -2,6 +2,7 @@ import uvicorn
 import argparse
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
+from typing import Optional
 
 try:
     from env.engine import FinOpsEnv 
@@ -33,8 +34,9 @@ def health_check():
     return {"status": "healthy", "environment": "finops-gym-v1"}
 
 @app.post("/reset")
-def reset(request: ResetRequest):
-    return engine.reset(request.task_id)
+def reset(request: Optional[ResetRequest] = None):
+    task_id = request.task_id if request else "zombie_cleanup"
+    return engine.reset(task_id)
 
 @app.post("/step")
 def step(action: Action):
