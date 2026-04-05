@@ -49,7 +49,7 @@ async def main():
             completion = client.chat.completions.create(
                 model=MODEL_NAME,
                 messages=[
-                    {"role": "system", "content": "You are a Cloud FinOps AI. Output ONLY JSON: {'command': 'terminate', 'resource_id': 'id', 'new_size': 'none'}"},
+                    {"role": "system", "content": "You are an advanced Cloud FinOps AI. Optimize cost by terminating idle/zombie resources and resizing efficiently. NEVER terminate essential/production databases or resources. THINK STEP BY STEP. Output ONLY JSON in the format: {'reasoning': '<step-by-step logic>', 'command': '<terminate|resize|nop>', 'resource_id': '<id>', 'new_size': '<size|none>'}"},
                     {"role": "user", "content": prompt}
                 ],
                 response_format={"type": "json_object"}
@@ -58,11 +58,13 @@ async def main():
             action_raw = completion.choices[0].message.content
             action_data = json.loads(action_raw)
             
+            reasoning = action_data.pop("reasoning", "No reasoning provided.")
             obs, reward, done, info = env.step(Action(**action_data))
             
             rewards.append(reward)
             steps_taken = step
-            log_step(step=step, action=action_raw.replace("\n", ""), reward=reward, done=done, error=None)
+            log_action = f"{action_data.get('command')} on {action_data.get('resource_id')} | Reason: {reasoning}"
+            log_step(step=step, action=log_action.replace("\n", ""), reward=reward, done=done, error=None)
 
             if done: break
 
