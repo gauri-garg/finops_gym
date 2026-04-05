@@ -3,7 +3,6 @@ import argparse
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
-# Meta-Standard: Use absolute imports for the package structure
 try:
     from env.engine import FinOpsEnv 
     from env.models import Action, Observation
@@ -19,7 +18,6 @@ class ResetRequest(BaseModel):
 
 app = FastAPI(title="FinOps-Gym-V1")
 
-# Standard Hackathon Middleware
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"],
@@ -40,7 +38,6 @@ def reset(request: ResetRequest):
 
 @app.post("/step")
 def step(action: Action):
-    # This matches the mentor's Pydantic model structure
     obs, reward, done, info = engine.step(action)
     return {
         "observation": obs,
@@ -49,12 +46,7 @@ def step(action: Action):
         "info": info
     }
 
-# --- MENTOR'S MAIN ENTRY POINT ---
 def main():
-    """
-    This is the function the Meta Validator calls via 'serve'.
-    It allows the bot to override the port.
-    """
     parser = argparse.ArgumentParser(description="FinOps Gym Server")
     parser.add_argument("--host", type=str, default="0.0.0.0")
     parser.add_argument("--port", type=int, default=8000)
