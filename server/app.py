@@ -3,16 +3,17 @@ import argparse
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from typing import Optional
+from pydantic import BaseModel
 
 try:
     from env.engine import FinOpsEnv 
-    from env.models import Action, Observation
-    from pydantic import BaseModel
+    from env.models import Action, Observation, State
+    from env.tasks import get_task_score
 except ImportError:
     # Fallback for local testing if needed
     from engine import FinOpsEnv
-    from models import Action, Observation
-    from pydantic import BaseModel
+    from models import Action, Observation, State
+    from tasks import get_task_score
 
 class ResetRequest(BaseModel):
     task_id: str = "zombie_cleanup"
@@ -46,6 +47,22 @@ def step(action: Action):
         "reward": reward,
         "done": done,
         "info": info
+    }
+
+@app.get("/state")
+def get_state():
+    """Returns the current episode metadata."""
+    return engine.state()
+
+@app.post("/score")
+def score(request: Optional[ResetRequest] = None):
+    """Explicit scoring endpoint for the validator."""
+    task_id = request.task_id if request else getattr(engine.state(), 'task_id', 'zombie_cleanup')
+    current_score = get_task_score(engine, task_id)
+    return {
+        "task_id": task_id,
+        "score": round(current_score, 4),
+        "status": "success"
     }
 
 def main():

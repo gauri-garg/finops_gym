@@ -24,3 +24,10 @@ class Observation(BaseModel):
     logs: List[str]
 
     model_config = ConfigDict(from_attributes=True)
+
+class State(BaseModel):
+    episode_id: str
+    task_id: str = "zombie_cleanup"
+    step_count: int = 0
+    total_reward: float = 0.0
+    is_done: bool = False

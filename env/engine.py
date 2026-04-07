@@ -1,19 +1,23 @@
 from __future__ import annotations
-import numpy as np
+import uuid
 from typing import Tuple, List, Optional, Dict 
-from env.models import Observation, Action, CloudResource
+from env.models import Observation, Action, CloudResource, State
 
 class FinOpsEnv:
     def __init__(self):
         self.max_steps = 10
-        self.current_step = 0
         self.resources: List[CloudResource] = []
-        self.task_id = "zombie_cleanup"
+        self._state = State(episode_id=str(uuid.uuid4()))
         self.reset()
 
     def reset(self, task_id: str = "zombie_cleanup") -> Observation:
-        self.current_step = 0
-        self.task_id = task_id
+        self._state = State(
+            episode_id=str(uuid.uuid4()),
+            task_id=task_id,
+            step_count=0,
+            total_reward=0.0,
+            is_done=False
+        )
         
         if task_id == "zombie_cleanup":
             # Focus: Idle resources with 0% CPU
@@ -23,6 +27,7 @@ class FinOpsEnv:
                 CloudResource(id="storage-temp-logs", resource_type="storage", size="500GB", cpu_util=0.01, hourly_cost=0.05, is_essential=False)
             ]
         elif task_id == "right_sizing":
+            # Total cost: 1.1336
             self.resources = [
                 CloudResource(id="db-main", resource_type="database", size="db.r5.4xlarge", cpu_util=0.05, hourly_cost=0.4536, is_essential=True),
                 CloudResource(id="web-server-oversized", resource_type="compute", size="c5.4xlarge", cpu_util=0.10, hourly_cost=0.68, is_essential=True)
@@ -41,9 +46,9 @@ class FinOpsEnv:
         return self._get_obs(f"Environment reset. Task: {task_id}")
 
     def step(self, action: Action) -> Tuple[Observation, float, bool, Dict]:
-        self.current_step += 1
+        self._state.step_count += 1
         reward = 0.0
-        msg = f"Step {self.current_step}: Executed {action.command} on {action.resource_id}"
+        msg = f"Step {self._state.step_count}: Executed {action.command} on {action.resource_id}"
         
         target_idx = next((i for i, r in enumerate(self.resources) if r.id == action.resource_id), None)
         
@@ -66,8 +71,8 @@ class FinOpsEnv:
             elif action.command == "resize":
                 if action.new_size and action.new_size != "none":
                     old_cost = resource.hourly_cost
-                    resource.hourly_cost *= 0.5
-                    resource.cpu_util *= 2.0
+                    resource.hourly_cost *= 0.5 # Simplified cost reduction for resize
+                    resource.cpu_util = min(1.0, resource.cpu_util * 2.0)
                     resource.size = action.new_size
                     
                     cost_saved = (old_cost - resource.hourly_cost) * 10
@@ -79,16 +84,20 @@ class FinOpsEnv:
                     else:
                         msg = f"SUCCESS: {resource.id} right-sized."
                         
-                    # Evaluated Formula: Reward = (Cost Saved * 0.7) - (Performance Penalty * 0.3)
                     reward = (cost_saved * 0.7) - (perf_penalty * 0.3)
         
         elif action.command == "nop":
-            # Penalty for doing nothing using formula equivalents
-            reward = (0.0 * 0.7) - (0.5 * 0.3) 
+            # Penalty for doing nothing (opportunity cost)
+            reward = -0.15 
             msg = "No operation performed."
 
-        done = self.current_step >= self.max_steps or len(self.resources) <= 2 # Finish when zombies are gone
-        return self._get_obs(msg), float(reward), done, {}
+        self._state.total_reward += reward
+        
+        # End conditions
+        self._state.is_done = self._state.step_count >= self.max_steps or \
+                             (self._state.task_id == "zombie_cleanup" and len(self.resources) <= 1)
+        
+        return self._get_obs(msg), float(reward), self._state.is_done, {}
 
     def _get_obs(self, log_msg: str) -> Observation:
         total_cost = sum(r.hourly_cost for r in self.resources)
@@ -99,5 +108,5 @@ class FinOpsEnv:
             logs=[log_msg]
         )
 
-    def state(self) -> Observation:
-        return self._get_obs("State requested.")
+    def state(self) -> State:
+        return self._state
