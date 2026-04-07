@@ -18,7 +18,6 @@ def get_task_score(env, task_id: str) -> float:
         initial_cost = 0.4536
         current_cost = sum(r.hourly_cost for r in env.resources)
         savings = max(0, initial_cost - current_cost)
-        # FIX: Scaled and capped to stay strictly below 1.0 
         raw_score = (savings / 0.5) * 0.9
 
     # Task 3: Disaster Recovery (Hard)
