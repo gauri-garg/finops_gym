@@ -15,12 +15,29 @@ class FinOpsEnv:
         self.current_step = 0
         self.task_id = task_id
         
-        self.resources = [
-            CloudResource(id="srv-prod-01", resource_type="compute", size="m5.xlarge", cpu_util=0.02, hourly_cost=0.192, is_essential=True, region="us-east-1", uptime_days=365, service_level_agreement="99.99%"),
-            CloudResource(id="db-main", resource_type="database", size="db.m5.large", cpu_util=0.45, hourly_cost=0.170, is_essential=True, region="us-west-2", uptime_days=400, service_level_agreement="99.99%"),
-            CloudResource(id="srv-idle-static", resource_type="compute", size="t3.medium", cpu_util=0.0, hourly_cost=0.0416, is_essential=False, region="eu-central-1", uptime_days=10, service_level_agreement="99.0%"),
-            CloudResource(id="storage-temp-logs", resource_type="storage", size="500GB", cpu_util=0.01, hourly_cost=0.05, is_essential=False, region="us-east-1", uptime_days=5, service_level_agreement="99.0%")
-        ]
+        if task_id == "zombie_cleanup":
+            # Focus: Idle resources with 0% CPU
+            self.resources = [
+                CloudResource(id="srv-prod-01", resource_type="compute", size="m5.xlarge", cpu_util=0.85, hourly_cost=0.192, is_essential=True),
+                CloudResource(id="srv-idle-static", resource_type="compute", size="t3.medium", cpu_util=0.0, hourly_cost=0.0416, is_essential=False),
+                CloudResource(id="storage-temp-logs", resource_type="storage", size="500GB", cpu_util=0.01, hourly_cost=0.05, is_essential=False)
+            ]
+        elif task_id == "right_sizing":
+            self.resources = [
+                CloudResource(id="db-main", resource_type="database", size="db.r5.4xlarge", cpu_util=0.05, hourly_cost=0.4536, is_essential=True),
+                CloudResource(id="web-server-oversized", resource_type="compute", size="c5.4xlarge", cpu_util=0.10, hourly_cost=0.68, is_essential=True)
+            ]
+        elif task_id == "disaster_recovery":
+            # Focus: Keeping 'is_essential' alive during a "budget emergency"
+            self.resources = [
+                CloudResource(id="critical-app-01", resource_type="compute", size="m5.large", cpu_util=0.50, hourly_cost=0.096, is_essential=True),
+                CloudResource(id="critical-db-01", resource_type="database", size="db.m5.large", cpu_util=0.40, hourly_cost=0.17, is_essential=True),
+                CloudResource(id="non-essential-dev", resource_type="compute", size="t3.nano", cpu_util=0.01, hourly_cost=0.0052, is_essential=False)
+            ]
+        else:
+            # Fallback
+            self.resources = [CloudResource(id="default-node", resource_type="compute", size="t3.micro", cpu_util=0.0, hourly_cost=0.01, is_essential=False)]
+            
         return self._get_obs(f"Environment reset. Task: {task_id}")
 
     def step(self, action: Action) -> Tuple[Observation, float, bool, Dict]:

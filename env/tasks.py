@@ -1,12 +1,12 @@
 def get_task_score(env, task_id: str) -> float:
     """Returns a score strictly between 0 and 1 for the Meta grader."""
-  
+    
     if not hasattr(env, 'resources') or env.resources is None:
-        return 0.001
+        return 0.005
 
-    raw_score = 0.0
+    raw_score = 0.5  
 
-    # Task 1: Zombie Cleanup (Easy) 
+    # Task 1: Zombie Cleanup (Easy)
     if task_id == "zombie_cleanup":
         remaining_ids = [r.id for r in env.resources]
         zombies = ["srv-idle-static", "storage-temp-logs"]
@@ -18,11 +18,11 @@ def get_task_score(env, task_id: str) -> float:
         initial_cost = 0.4536
         current_cost = sum(r.hourly_cost for r in env.resources)
         savings = initial_cost - current_cost
-        raw_score = savings / 0.1
+        raw_score = savings / 0.1  # Target saving $0.10/hr
 
-    # Task 3: Disaster Recovery (Hard) 
+    # Task 3: Disaster Recovery (Hard) - ADDED GRADER
     elif task_id == "disaster_recovery":
-        essentials = [r for r in env.resources if r.is_essential]
-        raw_score = len(essentials) / 2.5 
+        essentials_alive = len([r for r in env.resources if r.is_essential])
+        raw_score = (essentials_alive / 2.0) * 0.9
 
     return float(max(0.001, min(raw_score, 0.999)))
