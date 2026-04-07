@@ -9,6 +9,23 @@
 **FinOps-Gym-V1** is a Reinforcement Learning (RL) environment designed to train and validate AI agents in the art of **Cloud Financial Management (FinOps)**. The environment simulates a cloud infrastructure where an agent must balance **Service Reliability** against **Infrastructure Cost**.
 
 Built by **Gauri Garg (JECRC University)** for the Meta x Scaler OpenEnv Hackathon.
+## ☁️ FinOps Gym: Cloud Cost Optimization Environment
+### 📖 Environment Description
+FinOps Gym is a real-world cloud cost optimization simulator. It provides a gymnasium-style interface where an AI agent acts as a Cloud Financial Manager. The goal is to optimize a live cloud inventory by identifying and "cleaning up" underutilized or "zombie" resources while ensuring that essential production infrastructure remains untouched.
+### 🕹️ Action Space
+The agent can interact with each cloud resource using a structured JSON action:terminate: Completely removes the resource from the inventory. Best for "zombie" or idle non-essential services.resize: Adjusts the resource size (e.g., from m5.xlarge to t3.medium) to reduce costs while maintaining functionality.nop: (No-Operation) The agent takes no action for the current step.
+### 👁️ Observation Space
+At each step, the agent receives a detailed state of the cloud environment:resources: A list of active objects, each containing cpu_utilization, hourly_cost, resource_type, and a critical is_essential boolean flag.total_hourly_cost: The current sum of all resource costs.logs: Feedback from the environment regarding the previous action's success or failure.
+### 🎯 Task Definitions
+The environment includes three specific tasks ranging from Easy to Hard:Zombie Cleanup (Easy): Identify and terminate 100% idle, non-essential storage and compute instances.Right-Sizing (Medium): Optimize a mix of active and idle resources by resizing those with low CPU utilization without terminating them.Production Stability (Hard): Maximize cost savings in a high-traffic environment where terminating an is_essential resource results in a critical failure score.
+### 🏆 Reward Function & Grading
+Positive Reward: Earned based on the dollar amount saved per hour (e.g., +10 * hourly_cost).Negative Penalty: Significant point deductions (e.g., -5.0) for terminating essential resources or causing performance bottlenecks.Final Score: A normalized value between 0.0 and 1.0 calculated by the task grader.
+### 🚀 Quick Start & Setup
+Clone the Repo: git clone https://github.com/gauri-garg/finops_gym.git 
+Install Dependencies: uv pip install -e .
+Run Inference: python inference.py (Ensure HF_TOKEN, MODEL_NAME, and API_BASE_URL are set in your environment).
+### 🏁 Mandatory Submission Note
+This environment is designed for the Meta PyTorch x Scaler OpenEnv Hackathon. It emits structured logs strictly following the [START], [STEP], and [END] format required for automated Phase 2 validation
 
 ## 🏗️ Project Structure
 ```text
