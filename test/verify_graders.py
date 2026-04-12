@@ -28,7 +28,7 @@ def test_grader_range():
         env.reset(task_id=tid)
 
         # --- 1. Initial state ---
-        initial_score = grader_fn(env)
+        initial_score = grader_fn(None, env)
         ok = 0.0 < initial_score < 1.0
         print(f"Task: {tid:20} | Initial Score: {initial_score:.4f} | OK: {ok}")
         assert ok, f"Initial score {initial_score} out of range for {tid}"
@@ -43,14 +43,14 @@ def test_grader_range():
         elif tid == "disaster_recovery":
             pass                        
 
-        perfect_score = grader_fn(env)
+        perfect_score = grader_fn(None, env)
         ok = 0.0 < perfect_score < 1.0
         print(f"Task: {tid:20} | Perfect Score: {perfect_score:.4f} | OK: {ok}")
         assert ok, f"Perfect score {perfect_score} out of range for {tid}"
 
         # --- 3. "Failed" state (empty env) ---
         env.resources = []
-        failed_score = grader_fn(env)
+        failed_score = grader_fn(None, env)
         ok = 0.0 < failed_score < 1.0
         print(f"Task: {tid:20} | Failed Score:  {failed_score:.4f} | OK: {ok}")
         assert ok, f"Failed score {failed_score} out of range for {tid}"
